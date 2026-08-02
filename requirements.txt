@@ -1,0 +1,6 @@
+sentence-transformers>=2.2.2
+qdrant-client>=1.7.0
+groq>=0.4.0
+python-dotenv>=1.0.0
+pypdf>=3.17.0
+torch
