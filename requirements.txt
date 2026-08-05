@@ -1,7 +1,14 @@
 sentence-transformers>=2.2.2
 qdrant-client>=1.7.0
+<<<<<<< HEAD
 openai>=1.0.0
 python-dotenv>=1.0.0
 pypdf>=3.17.0
 torch
 
+=======
+groq>=0.4.0
+python-dotenv>=1.0.0
+pypdf>=3.17.0
+torch
+>>>>>>> 49672135256fd1aea9c9b17b20fad1fba6a642eb

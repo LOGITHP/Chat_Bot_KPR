@@ -28,8 +28,12 @@ class VectorStore:
 
         # Initialize Local Qdrant Client
         print(f"[VectorStore] Initializing Qdrant at '{self.storage_path}'...")
+<<<<<<< HEAD
         self.client = QdrantClient(url=config.QDRANT_URL,
     api_key=config.QDRANT_API_KEY)
+=======
+        self.client = QdrantClient(path=self.storage_path)
+>>>>>>> 49672135256fd1aea9c9b17b20fad1fba6a642eb
 
         self._ensure_collection()
 

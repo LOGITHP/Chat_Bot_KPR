@@ -17,7 +17,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application files
 COPY . .
+<<<<<<< HEAD
 EXPOSE 8000
+=======
+
+>>>>>>> 49672135256fd1aea9c9b17b20fad1fba6a642eb
 # Ensure data and qdrant storage directories exist
 RUN mkdir -p data qdrant_storage
 
