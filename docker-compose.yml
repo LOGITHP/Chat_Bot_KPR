@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  chatbot:
+    build: .
+    image: college-chatbot:latest
+    container_name: college_rag_chatbot
+    stdin_open: true  # docker run -i
+    tty: true         # docker run -t
+    volumes:
+      - ./data:/app/data
+      - ./qdrant_storage:/app/qdrant_storage
+    env_file:
+      - .env
