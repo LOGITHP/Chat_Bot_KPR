@@ -26,13 +26,9 @@ def interactive_chat(rag_engine: RAGEngine):
     """Interactive terminal chat loop."""
     print("\n" + "=" * 60)
     print(" COLLEGE RAG CHATBOT (Terminal CLI)")
-<<<<<<< HEAD
     print(f" Model: {config.LLM_MODEL_NAME} ({config.OPENAI_BASE_URL}) | Vector DB: Qdrant Local")
     print(" Commands: '!clear' to reset chat memory, '!ingest' to index documents, 'exit' to quit.")
 
-=======
-    print(" Model: Groq Qwen (2.5 32B) | Vector DB: Qdrant Local")
->>>>>>> 49672135256fd1aea9c9b17b20fad1fba6a642eb
     while True:
         try:
             user_input = input("\nAsk a question: ").strip()
@@ -43,21 +39,15 @@ def interactive_chat(rag_engine: RAGEngine):
                 print("Exiting College ChatBot. Goodbye!")
                 break
 
-<<<<<<< HEAD
             if user_input.lower() in ["!clear", "!reset"]:
                 rag_engine.clear_history()
                 continue
 
-=======
->>>>>>> 49672135256fd1aea9c9b17b20fad1fba6a642eb
             if user_input.lower() == "!ingest":
                 ingest_data(rag_engine.vector_store)
                 continue
 
-<<<<<<< HEAD
 
-=======
->>>>>>> 49672135256fd1aea9c9b17b20fad1fba6a642eb
             print("\nSearching Qdrant knowledge base & generating response...")
             response = rag_engine.generate_response(user_input)
 

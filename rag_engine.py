@@ -1,11 +1,7 @@
 import os
 import re
 from typing import Dict, Any, List
-<<<<<<< HEAD
 from openai import OpenAI
-=======
-from groq import Groq
->>>>>>> 49672135256fd1aea9c9b17b20fad1fba6a642eb
 import config
 from vector_store import VectorStore
 
@@ -41,7 +37,6 @@ class RAGEngine:
         else:
             self.vector_store = vector_store
 
-<<<<<<< HEAD
         api_key = config.OPENAI_API_KEY or "ollama"
         base_url = config.OPENAI_BASE_URL or "http://localhost:11434/v1"
         self.model_name = config.LLM_MODEL_NAME
@@ -57,17 +52,6 @@ class RAGEngine:
 
     def generate_response(self, question: str, top_k: int = config.TOP_K, use_history: bool = True, max_history_turns: int = 5) -> Dict[str, Any]:
         """Retrieves context from Qdrant and generates an answer using OpenAI-compatible LLM with chat history memory."""
-=======
-        api_key = config.GROQ_API_KEY
-        if not api_key:
-            print("[Warning] GROQ_API_KEY is not set in environment or .env file.")
-        
-        self.groq_client = Groq(api_key=api_key)
-        self.model_name = config.GROQ_MODEL_NAME
-
-    def generate_response(self, question: str, top_k: int = config.TOP_K) -> Dict[str, Any]:
-        """Retrieves context from Qdrant and generates an answer using Groq Qwen model."""
->>>>>>> 49672135256fd1aea9c9b17b20fad1fba6a642eb
         # 1. Search vector store
         context_matches = self.vector_store.search(question, top_k=top_k)
 
@@ -83,11 +67,7 @@ class RAGEngine:
         # 2. System and User Prompt setup
         system_prompt = (
             "You are a helpful and accurate AI assistant for the college. "
-<<<<<<< HEAD
             "Use the provided context documents and conversation history to answer the user's question clearly and concisely. "
-=======
-            "Use the provided context documents to answer the user's question clearly and concisely. "
->>>>>>> 49672135256fd1aea9c9b17b20fad1fba6a642eb
             "Respond directly with the final answer. Do NOT output scratchpad or thinking steps. "
             "If the context does not contain enough information to answer the question, state politely that "
             "you do not have that specific information in the current data store."
@@ -102,7 +82,6 @@ class RAGEngine:
             f"Answer:"
         )
 
-<<<<<<< HEAD
         # 3. Construct messages payload with chat history memory
         messages = [{"role": "system", "content": system_prompt}]
 
@@ -117,22 +96,12 @@ class RAGEngine:
         try:
             chat_completion = self.client.chat.completions.create(
                 messages=messages,
-=======
-        # 3. Call Groq LLM API
-        try:
-            chat_completion = self.groq_client.chat.completions.create(
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
->>>>>>> 49672135256fd1aea9c9b17b20fad1fba6a642eb
                 model=self.model_name,
                 temperature=0.2,
                 max_tokens=1024
             )
             raw_text = chat_completion.choices[0].message.content or ""
             answer = extract_clean_answer(raw_text)
-<<<<<<< HEAD
 
             # Store turn in conversation history if generation succeeded
             if use_history and answer and not answer.startswith("Error generating response"):
@@ -141,10 +110,6 @@ class RAGEngine:
 
         except Exception as e:
             answer = f"Error generating response from LLM ({self.model_name}): {str(e)}"
-=======
-        except Exception as e:
-            answer = f"Error generating response from Groq API ({self.model_name}): {str(e)}"
->>>>>>> 49672135256fd1aea9c9b17b20fad1fba6a642eb
 
         return {
             "question": question,
@@ -152,15 +117,7 @@ class RAGEngine:
             "sources": context_matches
         }
 
-<<<<<<< HEAD
 
-=======
-        return {
-            "question": question,
-            "answer": answer,
-            "sources": context_matches
-        }
->>>>>>> 49672135256fd1aea9c9b17b20fad1fba6a642eb
 
 if __name__ == "__main__":
     engine = RAGEngine()
