@@ -12,15 +12,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy and install requirements
+# Copy requirements and install python packages
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy backend application source code
-COPY app/ ./app/
-COPY .env .
+# Copy all backend source code, configuration, and app files into image
+COPY . .
 
-# Create persistent storage directories
+# Ensure storage directories exist inside the container
 RUN mkdir -p storage/data storage/minio_data storage/qdrant_storage
 
 EXPOSE 8000
