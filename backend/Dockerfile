@@ -6,19 +6,23 @@ WORKDIR /app
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
-# Install system dependencies if required
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
+# Copy and install requirements
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application files
-COPY . .
+# Copy backend application source code
+COPY app/ ./app/
+COPY .env .
 
-# Ensure data and qdrant storage directories exist
-RUN mkdir -p data qdrant_storage
+# Create persistent storage directories
+RUN mkdir -p storage/data storage/minio_data storage/qdrant_storage
 
-CMD ["python", "main.py"]
+EXPOSE 8000
+
+CMD ["python", "app/main.py"]

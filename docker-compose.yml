@@ -1,14 +1,100 @@
 version: '3.8'
 
 services:
-  chatbot:
-    build: .
-    image: college-chatbot:latest
-    container_name: college_rag_chatbot
-    stdin_open: true  # docker run -i
-    tty: true         # docker run -t
+  # 1. MongoDB Database
+  mongodb:
+    image: mongo:6.0
+    container_name: college_chatbot_mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=college_chatbot_db
     volumes:
-      - ./data:/app/data
-      - ./qdrant_storage:/app/qdrant_storage
-    env_file:
-      - .env
+      - mongo_data:/data/db
+    networks:
+      - chatbot_network
+
+  # 2. MinIO Object Storage
+  minio:
+    image: minio/minio:RELEASE.2023-09-04T19-57-37Z
+    container_name: college_chatbot_minio
+    restart: always
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - chatbot_network
+
+  # 3. MinIO Bucket Initialization Job
+  createbuckets:
+    image: minio/mc
+    container_name: college_chatbot_minio_init
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c " /usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin; /usr/bin/mc mb myminio/college-documents; /usr/bin/mc anonymous set download myminio/college-documents; exit 0; "
+    networks:
+      - chatbot_network
+
+  # 4. FastAPI Backend Application
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: college_chatbot_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017
+      - MONGO_DB_NAME=college_chatbot_db
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - MINIO_BUCKET=college-documents
+      - MINIO_SECURE=false
+      - QDRANT_URL=https://dbaf849d-c6d7-42b9-90a6-623d134cf23c.australia-southeast1-0.gcp.cloud.qdrant.io
+      - QDRANT_API_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIiwic3ViamVjdCI6ImFwaS1rZXk6MWIyMTJiN2QtMDI0Mi00ZGIyLWI0MWYtZGU3MTMzMGU2MzAzIn0.5i9eeCpoFXGKyqzMfU4kQaGT3_hxvXhIJtJtRqZN-LU
+      - COLLECTION_NAME=college_knowledge
+      - EMBEDDING_MODEL_NAME=BAAI/bge-base-en-v1.5
+      - LOCAL_FILES_ONLY=false
+      - OPENAI_API_KEY=ollama
+      - OPENAI_BASE_URL=http://host.docker.internal:11434/v1
+      - LLM_MODEL_NAME=qwen2.5:7b
+      - SECRET_KEY=college-chatbot-secret-key-super-secure-2026
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - mongodb
+      - minio
+    networks:
+      - chatbot_network
+
+  # 5. React Frontend Application
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: college_chatbot_frontend
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - chatbot_network
+
+networks:
+  chatbot_network:
+    driver: bridge
+
+volumes:
+  mongo_data:
+  minio_data:
