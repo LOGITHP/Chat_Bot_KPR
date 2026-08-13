@@ -1,9 +1,17 @@
-import { Link, Outlet, useLocation } from "react-router-dom"
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom"
 import { LayoutDashboard, FileText, Building2, Users, Bus, Info, FolderTree, Settings, LogOut } from "lucide-react"
 import { cn } from "../lib/utils"
+import { clearAdminSession, getAdminName } from "../pages/Login"
 
 export default function AdminLayout() {
   const location = useLocation()
+  const navigate  = useNavigate()
+  const adminName = getAdminName() || "Admin"
+
+  function handleLogout() {
+    clearAdminSession()
+    navigate("/login", { replace: true })
+  }
 
   const navGroups = [
     {
@@ -77,8 +85,11 @@ export default function AdminLayout() {
           ))}
         </div>
 
-        <div className="p-4 border-t border-border">
-          <button className="flex w-full items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 dark:text-gray-400 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors">
+        <div className="p-4 border-t border-border/20">
+          <button
+            onClick={handleLogout}
+            className="flex w-full items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-slate-400 hover:bg-red-900/20 hover:text-red-400 transition-colors"
+          >
             <LogOut className="h-4 w-4" />
             Logout
           </button>
@@ -89,10 +100,10 @@ export default function AdminLayout() {
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-14 flex items-center justify-between px-4 md:px-6 border-b border-border bg-white dark:bg-gray-900">
           <div className="font-semibold text-gray-800 dark:text-gray-200 md:hidden">CampusAI Admin</div>
-          <div className="flex items-center gap-4 ml-auto">
-            <div className="text-sm font-medium text-gray-600 dark:text-gray-300">Admin User</div>
-            <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-xs">
-              AD
+          <div className="flex items-center gap-3 ml-auto">
+            <div className="text-sm font-medium text-gray-600 dark:text-gray-300 hidden sm:block">{adminName}</div>
+            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white font-bold text-xs shadow">
+              {adminName.charAt(0).toUpperCase()}
             </div>
           </div>
         </header>

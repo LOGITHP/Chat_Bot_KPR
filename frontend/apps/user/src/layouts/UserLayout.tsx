@@ -1,11 +1,22 @@
-import { Link, Outlet, useLocation } from "react-router-dom"
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom"
 import { MessageSquarePlus, History, Search, Building2, Users, Bus, Info, FileText, User, Settings, LogOut, Menu, X } from "lucide-react"
 import { useState } from "react"
 import { cn } from "../lib/utils"
+import { clearSession } from "../pages/Login"
 
 export default function UserLayout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const location = useLocation()
+  const navigate  = useNavigate()
+
+  function handleLogout() {
+    clearSession()
+    localStorage.removeItem("campus_guest_session")
+    navigate("/login", { replace: true })
+  }
+
+  const userName = localStorage.getItem("campus_ai_name") || "Guest"
+  const userRole = localStorage.getItem("campus_ai_role") || "guest"
 
   const navItems = [
     { name: "Chat", path: "/chat", icon: MessageSquarePlus },
@@ -32,13 +43,13 @@ export default function UserLayout() {
       <Link
         to={item.path}
         className={cn(
-          "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-          isActive 
-            ? "bg-primary text-primary-foreground" 
-            : "text-sidebar-foreground hover:bg-gray-100 dark:hover:bg-gray-800"
+          "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150",
+          isActive
+            ? "bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-500/25"
+            : "text-[hsl(var(--sidebar-foreground))] hover:bg-indigo-50 dark:hover:bg-indigo-950/30 hover:text-indigo-600 dark:hover:text-indigo-400"
         )}
       >
-        <item.icon className="h-4 w-4" />
+        <item.icon className={cn("h-4 w-4 flex-shrink-0", isActive ? "text-white" : "")} />
         {item.name}
       </Link>
     )
@@ -59,13 +70,16 @@ export default function UserLayout() {
         "fixed md:static inset-y-0 left-0 z-40 w-64 bg-sidebar border-r border-border transform transition-transform duration-200 ease-in-out flex flex-col",
         isMobileMenuOpen ? "translate-x-0 pt-14 md:pt-0" : "-translate-x-full md:translate-x-0"
       )}>
-        <div className="p-4 hidden md:flex items-center">
-          <div className="font-semibold text-xl">CampusAI</div>
+        <div className="p-5 hidden md:flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-md">
+            <span className="text-white text-xs font-bold">AI</span>
+          </div>
+          <div className="font-bold text-lg gradient-text">CampusAI</div>
         </div>
 
-        <div className="p-4">
-          <Link to="/chat" className="flex items-center gap-2 w-full justify-center px-4 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium">
-            <MessageSquarePlus className="h-5 w-5" />
+        <div className="px-4 pb-4">
+          <Link to="/chat" className="flex items-center gap-2 w-full justify-center px-4 py-2.5 bg-gradient-to-r from-indigo-500 to-violet-600 text-white rounded-xl hover:opacity-90 transition-all shadow-md shadow-indigo-500/25 font-medium text-sm">
+            <MessageSquarePlus className="h-4 w-4" />
             New Chat
           </Link>
         </div>
@@ -84,10 +98,23 @@ export default function UserLayout() {
         </div>
 
         <div className="p-3 border-t border-border space-y-1">
-          {accountItems.map(item => <NavLink key={item.path} item={item} />)}
-          <button className="flex w-full items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-sidebar-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors">
+          {/* User info badge */}
+          <div className="flex items-center gap-2 px-3 py-2 mb-1">
+            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+              {userName.charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-foreground truncate">{userName}</p>
+              <p className="text-[10px] text-muted-foreground capitalize">{userRole}</p>
+            </div>
+          </div>
+          {userRole !== "guest" && accountItems.map(item => <NavLink key={item.path} item={item} />)}
+          <button
+            onClick={handleLogout}
+            className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-[hsl(var(--sidebar-foreground))] hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-all duration-150"
+          >
             <LogOut className="h-4 w-4" />
-            Logout
+            {userRole === "guest" ? "Exit Guest Session" : "Logout"}
           </button>
         </div>
       </aside>

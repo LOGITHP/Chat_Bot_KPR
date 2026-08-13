@@ -4,11 +4,12 @@ from typing import List, Dict, Any
 
 class OllamaClient:
     def __init__(self):
-        print(f"[OllamaClient] Initializing with base URL: {settings.OLLAMA_URL} and model: {settings.OLLAMA_MODEL}")
-        # Use v1 endpoint for OpenAI compatibility
-        base_url = f"{settings.OLLAMA_URL}/v1"
-        self.client = AsyncOpenAI(api_key="ollama", base_url=base_url)
-        self.model_name = settings.OLLAMA_MODEL
+        base_url = settings.effective_llm_base_url
+        model = settings.effective_model_name
+        api_key = settings.effective_api_key
+        print(f"[OllamaClient] Initializing with base URL: {base_url}, model: {model}")
+        self.client = AsyncOpenAI(api_key=api_key, base_url=base_url)
+        self.model_name = model
 
     async def generate_chat_completion(self, messages: List[Dict[str, str]], max_tokens: int = 1024, temperature: float = 0.2) -> str:
         try:

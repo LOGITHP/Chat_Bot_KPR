@@ -7,7 +7,7 @@ from app.embeddings.embedding_service import embedding_service
 
 class VectorStoreClient:
     def __init__(self):
-        self.collection_name = settings.QDRANT_COLLECTION
+        self.collection_name = settings.effective_collection
         
         # Initialize Qdrant Client
         api_key = settings.QDRANT_API_KEY if settings.QDRANT_API_KEY else None

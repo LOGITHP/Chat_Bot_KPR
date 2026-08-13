@@ -1,3 +1,4 @@
+import asyncio
 from typing import Dict, Any, Optional
 from app.rag.retrieval import retrieve_context
 from app.rag.memory import get_conversation_context, add_message_to_conversation
@@ -10,8 +11,10 @@ async def generate_rag_response(
     is_guest: bool = False,
     requested_scope: Optional[dict] = None
 ) -> Dict[str, Any]:
-    # 1. Retrieve context
-    context_matches = retrieve_context(question, user_profile, is_guest, requested_scope)
+    # 1. Retrieve context (blocking call — run in threadpool to avoid blocking event loop)
+    context_matches = await asyncio.to_thread(
+        retrieve_context, question, user_profile, is_guest, requested_scope
+    )
     
     # Format context
     context_str = ""

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional, List
-from app.core.permissions import get_current_user
+from app.core.permissions import get_optional_user
 from app.rag.pipeline import generate_rag_response
 from app.db.mongodb import db
 import uuid
@@ -17,7 +17,7 @@ class ChatRequest(BaseModel):
 @router.post("/")
 async def chat(
     request: ChatRequest,
-    current_user: Optional[dict] = Depends(get_current_user)
+    current_user: Optional[dict] = Depends(get_optional_user)
 ):
     user_profile = current_user if current_user else {"role": "guest"}
     
