@@ -100,15 +100,29 @@ services:
     networks:
       - campus_network
 
-  # 7. React Frontend Application
-  frontend:
+  # 7. React Frontend Application - User
+  frontend-user:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
-    container_name: campus_assistant_frontend
+      dockerfile: apps/user/Dockerfile
+    container_name: campus_assistant_frontend_user
     restart: always
     ports:
-      - "3000:80"
+      - "5173:80"
+    depends_on:
+      - backend
+    networks:
+      - campus_network
+
+  # 8. React Frontend Application - Admin
+  frontend-admin:
+    build:
+      context: ./frontend
+      dockerfile: apps/admin/Dockerfile
+    container_name: campus_assistant_frontend_admin
+    restart: always
+    ports:
+      - "5174:80"
     depends_on:
       - backend
     networks:
