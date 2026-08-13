@@ -12,14 +12,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
+# Install PyTorch CPU-only version first to avoid downloading multi-GB CUDA libraries
+RUN pip install --no-cache-dir --default-timeout=100 --retries 5 torch --index-url https://download.pytorch.org/whl/cpu
+
 # Copy requirements and install python packages
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --default-timeout=100 --retries 5 -r requirements.txt
 
-# Copy all backend source code, configuration, and app files into image
+# Copy all backend application code
 COPY . .
 
-# Ensure storage directories exist inside the container
+# Ensure storage directories exist inside container
 RUN mkdir -p storage/data storage/minio_data storage/qdrant_storage
 
 EXPOSE 8000

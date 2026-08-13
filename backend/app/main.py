@@ -1,56 +1,25 @@
-import sys
-from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from app.config import settings
+from app.api.v1 import api_router
+from app.db.mongodb import connect_to_mongo, close_mongo_connection
 
-# Add current folder to path
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+app = FastAPI(title="Campus AI Assistant API", version="1.0.0")
 
-import config
-from routes.auth_routes import router as auth_router
-from routes.admin_routes import router as admin_router
-from routes.chat_routes import router as chat_router
-
-app = FastAPI(
-    title="College RAG Chatbot API",
-    description="Enterprise RAG System powered by FastAPI, React, MinIO, MongoDB, Qdrant Vector Store, and local Ollama model.",
-    version="2.0.0"
-)
-
-# Configure CORS for React frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Allows local React dev server on any port
+    allow_origins=[origin.strip() for origin in settings.CORS_ORIGINS.split(",")],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include API Routers
-app.include_router(auth_router)
-app.include_router(admin_router)
-app.include_router(chat_router)
+@app.on_event("startup")
+async def startup_db_client():
+    await connect_to_mongo()
 
-@app.get("/")
-def root():
-    return {
-        "status": "online",
-        "service": "College RAG Chatbot API",
-        "version": "2.0.0",
-        "llm_model": config.LLM_MODEL_NAME,
-        "embedding_model": config.EMBEDDING_MODEL_NAME
-    }
+@app.on_event("shutdown")
+async def shutdown_db_client():
+    await close_mongo_connection()
 
-@app.get("/api/health")
-def health_check():
-    return {
-        "status": "healthy",
-        "mongo_db": config.MONGO_DB_NAME,
-        "minio_bucket": config.MINIO_BUCKET,
-        "collection_name": config.COLLECTION_NAME
-    }
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+app.include_router(api_router, prefix="/api/v1")

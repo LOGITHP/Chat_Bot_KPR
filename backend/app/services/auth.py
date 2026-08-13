@@ -25,14 +25,22 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=config.ACCESS_TOKEN_EXPIRE_MINUTES))
+    expire_minutes = config.ACCESS_TOKEN_EXPIRE_MINUTES
+    if expires_delta:
+        expire_minutes = int(expires_delta.total_seconds() / 60)
+    
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=expire_minutes))
     to_encode.update({"exp": expire})
     
     if JOSE_AVAILABLE:
-        return jwt.encode(to_encode, config.SECRET_KEY, algorithm=config.ALGORITHM)
+        token = jwt.encode(to_encode, config.SECRET_KEY, algorithm=config.ALGORITHM)
     else:
         # Fallback simple token
-        return f"mock_token_{to_encode.get('sub')}_{to_encode.get('role')}_{int(time.time())}"
+        token = f"mock_token_{to_encode.get('sub')}_{to_encode.get('role')}_{int(time.time())}"
+
+    # Persist active token metadata in MongoDB / DB Manager
+    db_manager.save_jwt_token(token, data, expires_in_minutes=expire_minutes)
+    return token
 
 def decode_token(token: str) -> Dict[str, Any]:
     if JOSE_AVAILABLE:
@@ -64,6 +72,15 @@ def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = Secur
             headers={"WWW-Authenticate": "Bearer"},
         )
     token = credentials.credentials
+    
+    # Verify token active status in MongoDB
+    if not db_manager.is_token_active(token):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has been revoked or expired in session store.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     payload = decode_token(token)
     username = payload.get("sub")
     role = payload.get("role", "student")
@@ -81,14 +98,16 @@ def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = Secur
         return {
             "username": username,
             "role": role,
-            "student_id": student_id or username
+            "student_id": student_id or username,
+            "token": token
         }
 
     return {
         "username": user["username"],
         "role": user.get("role", "student"),
         "student_id": user.get("student_id", user["username"]),
-        "id": str(user.get("_id", user.get("username")))
+        "id": str(user.get("_id", user.get("username"))),
+        "token": token
     }
 
 def require_admin(current_user: Dict[str, Any] = Depends(get_current_user)):

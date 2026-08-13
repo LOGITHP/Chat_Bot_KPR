@@ -34,6 +34,12 @@ class TokenResponse(BaseModel):
 
 @router.post("/register", response_model=TokenResponse)
 def register(req: UserRegisterRequest):
+    if req.role == "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Public registration of Admin accounts is disabled. Admin access can only be granted by an existing Administrator."
+        )
+
     if db_manager.get_user_by_username(req.username):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -47,9 +53,11 @@ def register(req: UserRegisterRequest):
 
     user_data = {
         "username": req.username,
+        "email": req.username,
         "password_hash": hash_password(req.password),
         "role": req.role,
-        "student_id": student_id
+        "student_id": student_id,
+        "created_by": "self-registration"
     }
     db_manager.create_user(user_data)
 
@@ -96,6 +104,13 @@ def login(req: UserLoginRequest):
         "role": role,
         "student_id": student_id
     }
+
+@router.post("/logout")
+def logout(current_user: dict = Depends(get_current_user)):
+    token = current_user.get("token")
+    if token:
+        db_manager.revoke_jwt_token(token)
+    return {"message": "Logged out successfully and JWT session revoked."}
 
 @router.post("/guest-login", response_model=TokenResponse)
 def guest_login(req: GuestLoginRequest):

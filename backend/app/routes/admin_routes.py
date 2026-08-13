@@ -3,6 +3,7 @@ import tempfile
 from pathlib import Path
 from typing import Optional, List
 from fastapi import APIRouter, HTTPException, status, Depends, UploadFile, File, Form, Query
+from pydantic import BaseModel
 from database.mongo import db_manager
 from database.minio_client import minio_storage
 from services.auth import require_admin
@@ -137,3 +138,77 @@ def reindex_all_documents(current_user: dict = Depends(require_admin)):
         "total_documents": len(docs),
         "total_chunks_indexed": total_chunks
     }
+
+# --- ACCESS MANAGEMENT & USER CONTROL ENDPOINTS ---
+class GrantAccessRequest(BaseModel):
+    username: str
+    password: str
+    role: str = "student"  # "admin" or "student"
+    student_id: Optional[str] = None
+    full_name: Optional[str] = None
+
+@router.get("/users")
+def get_users_list(current_user: dict = Depends(require_admin)):
+    """Fetches list of all accounts registered in MongoDB."""
+    users = db_manager.get_all_users()
+    return {
+        "count": len(users),
+        "users": users
+    }
+
+@router.post("/users/grant-access")
+def grant_user_access(req: GrantAccessRequest, current_user: dict = Depends(require_admin)):
+    """Allows an Administrator/Principal to directly create or grant access to a user (Admin/Student)."""
+    # Import hash_password lazily to prevent circular import
+    from services.auth import hash_password
+    
+    existing = db_manager.get_user_by_username(req.username)
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"User '{req.username}' already exists in system database."
+        )
+
+    student_id = req.student_id or (f"STU-{uuid.uuid4().hex[:6].upper()}" if req.role == "student" else None)
+    
+    user_data = {
+        "username": req.username,
+        "email": req.username,
+        "password_hash": hash_password(req.password),
+        "role": req.role,
+        "student_id": student_id,
+        "full_name": req.full_name or req.username,
+        "created_by": current_user["username"]
+    }
+    db_manager.create_user(user_data)
+
+    return {
+        "message": f"Access granted successfully. User '{req.username}' created as '{req.role}'.",
+        "user": {
+            "username": req.username,
+            "role": req.role,
+            "student_id": student_id,
+            "created_by": current_user["username"]
+        }
+    }
+
+@router.delete("/users/{username}")
+def revoke_user_access(username: str, current_user: dict = Depends(require_admin)):
+    """Revokes/Deletes a user account from MongoDB."""
+    if username.lower() == current_user["username"].lower():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You cannot delete your own active Administrator session."
+        )
+
+    success = db_manager.delete_user(username)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User '{username}' not found."
+        )
+
+    return {
+        "message": f"User '{username}' access revoked and account deleted from MongoDB."
+    }
+

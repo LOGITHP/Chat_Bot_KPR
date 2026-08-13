@@ -29,14 +29,23 @@ class VectorStore:
         self.vector_dim = len(dummy_vector)
         print(f"[VectorStore] Embedding dimension: {self.vector_dim}")
 
-        # Initialize Qdrant Client
-        print(f"[VectorStore] Initializing Qdrant connection to '{config.QDRANT_URL}'...")
-        self.client = QdrantClient(
-            url=config.QDRANT_URL,
-            api_key=config.QDRANT_API_KEY
-        )
-
-        self._ensure_collection()
+        # Initialize Qdrant Client (Cloud or Local Disk Storage)
+        if config.QDRANT_URL and config.QDRANT_URL.startswith("http"):
+            try:
+                print(f"[VectorStore] Initializing Qdrant connection to '{config.QDRANT_URL}'...")
+                self.client = QdrantClient(
+                    url=config.QDRANT_URL,
+                    api_key=config.QDRANT_API_KEY if config.QDRANT_API_KEY else None
+                )
+                self._ensure_collection()
+            except Exception as e:
+                print(f"[VectorStore Warning] Connection to remote Qdrant failed ({e}). Falling back to local disk storage...")
+                self.client = QdrantClient(path=config.QDRANT_STORAGE_PATH)
+                self._ensure_collection()
+        else:
+            print(f"[VectorStore] Initializing Local Disk Qdrant storage at '{config.QDRANT_STORAGE_PATH}'...")
+            self.client = QdrantClient(path=config.QDRANT_STORAGE_PATH)
+            self._ensure_collection()
 
     def _ensure_collection(self):
         """Creates the Qdrant collection if it doesn't already exist."""
