@@ -32,15 +32,19 @@ services:
 
   # 3. MinIO Bucket Initialization Job
   createbuckets:
-    image: minio/mc
+    image: minio/mc:latest
     container_name: campus_assistant_minio_init
     depends_on:
       - minio
     entrypoint: >
       /bin/sh -c "
-      /usr/bin/mc alias set myminio http://minio:9000 $${MINIO_ROOT_USER:-minioadmin} $${MINIO_ROOT_PASSWORD:-minioadmin};
-      /usr/bin/mc mb myminio/$${MINIO_BUCKET:-campus-documents};
+      until /usr/bin/mc alias set myminio http://minio:9000 $${MINIO_ROOT_USER:-minioadmin} $${MINIO_ROOT_PASSWORD:-minioadmin}; do
+        echo 'Waiting for MinIO service...';
+        sleep 2;
+      done;
+      /usr/bin/mc mb --ignore-existing myminio/$${MINIO_BUCKET:-campus-documents};
       /usr/bin/mc anonymous set download myminio/$${MINIO_BUCKET:-campus-documents};
+      echo 'MinIO bucket initialized successfully!';
       exit 0;
       "
     networks:
@@ -77,9 +81,37 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
-    # Fallback if no GPU: the deploy section can be safely ignored by docker compose if no GPU is present or nvidia runtime is not installed
+    # Fallback if no GPU: the deploy section is safely ignored by docker compose if no GPU is present
 
-  # 6. FastAPI Backend Application
+  # 6. Ollama Model Auto-Puller (runs once, downloads model only if missing)
+  ollama-init:
+    image: curlimages/curl:latest
+    container_name: campus_assistant_ollama_init
+    depends_on:
+      - ollama
+    networks:
+      - campus_network
+    entrypoint: >
+      /bin/sh -c "
+      echo 'Waiting for Ollama service to be ready...';
+      until curl -s -f http://ollama:11434/api/tags > /dev/null 2>&1; do
+        echo 'Ollama not ready yet. Retrying in 2 seconds...';
+        sleep 2;
+      done;
+      echo 'Ollama is ready.';
+      MODEL=\"${OLLAMA_MODEL:-qwen3.5:4b}\";
+      echo \"Checking if model $$MODEL exists in local Ollama storage...\";
+      if curl -s http://ollama:11434/api/tags | grep -q \"\\\"name\\\":\\\"$$MODEL\"; then
+        echo \"Model $$MODEL is already present in persistent volume. Skipping download.\";
+      else
+        echo \"Model $$MODEL not found locally. Pulling from Ollama...\";
+        curl -s -X POST http://ollama:11434/api/pull -d \"{\\\"name\\\": \\\"$$MODEL\\\"}\";
+        echo 'Model pulled successfully!';
+      fi;
+      exit 0;
+      "
+
+  # 7. FastAPI Backend Application
   backend:
     build:
       context: ./backend
@@ -91,8 +123,10 @@ services:
     env_file:
       - .env
     environment:
-      # Ensure CORS covers both frontend containers
       - CORS_ORIGINS=http://localhost:5173,http://localhost:5174,http://frontend-user:80,http://frontend-admin:80
+      - HF_HOME=/root/.cache/huggingface
+    volumes:
+      - hf_cache:/root/.cache/huggingface
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
@@ -104,12 +138,12 @@ services:
       - campus_network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health/"]
-      interval: 30s
+      interval: 15s
       timeout: 10s
       retries: 5
-      start_period: 60s
+      start_period: 30s
 
-  # 7. React Frontend Application - User
+  # 8. React Frontend Application - User
   frontend-user:
     build:
       context: ./frontend
@@ -123,7 +157,7 @@ services:
     networks:
       - campus_network
 
-  # 8. React Frontend Application - Admin
+  # 9. React Frontend Application - Admin
   frontend-admin:
     build:
       context: ./frontend
@@ -146,3 +180,5 @@ volumes:
   minio_data:
   qdrant_data:
   ollama_data:
+  hf_cache:
+

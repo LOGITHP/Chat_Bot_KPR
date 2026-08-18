@@ -23,10 +23,10 @@ class Settings(BaseSettings):
     # .env uses: OPENAI_BASE_URL / OPENAI_API_KEY / LLM_MODEL_NAME
     OPENAI_BASE_URL: str = "http://localhost:11434/v1"
     OPENAI_API_KEY: str = "ollama"
-    LLM_MODEL_NAME: str = "qwen2.5:7b"
+    LLM_MODEL_NAME: str = "qwen3.5:4b"
     # Legacy / docker-compose keys kept for backward compatibility
     OLLAMA_URL: str = "http://localhost:11434"
-    OLLAMA_MODEL: str = ""                         # prefer LLM_MODEL_NAME
+    OLLAMA_MODEL: str = "qwen3.5:4b"                         # prefer LLM_MODEL_NAME
 
     # Embeddings
     EMBEDDING_MODEL_NAME: str = "BAAI/bge-m3"
@@ -68,7 +68,7 @@ class Settings(BaseSettings):
     @property
     def effective_model_name(self) -> str:
         """Returns the LLM model name, preferring LLM_MODEL_NAME from .env."""
-        return self.LLM_MODEL_NAME or self.OLLAMA_MODEL or "qwen2.5:7b"
+        return self.LLM_MODEL_NAME or self.OLLAMA_MODEL or "qwen3.5:4b"
 
     @property
     def effective_api_key(self) -> str:

@@ -4,7 +4,8 @@ WORKDIR /app
 
 # Prevent Python from writing .pyc files & buffer stdout/stderr
 ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
+    PYTHONDONTWRITEBYTECODE=1 \
+    HF_HOME=/root/.cache/huggingface
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -22,8 +23,8 @@ RUN pip install --no-cache-dir --default-timeout=100 --retries 5 -r requirements
 # Copy all backend application code
 COPY . .
 
-# Ensure storage directories exist inside container
-RUN mkdir -p storage/data storage/minio_data storage/qdrant_storage
+# Ensure storage and HuggingFace cache directories exist inside container
+RUN mkdir -p storage/data storage/minio_data storage/qdrant_storage /root/.cache/huggingface
 
 EXPOSE 8000
 

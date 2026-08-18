@@ -1,8 +1,9 @@
-from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo import AsyncMongoClient
 from app.config import settings
 
+
 class Database:
-    client: AsyncIOMotorClient = None
+    client: AsyncMongoClient | None = None
     db = None
 
     # Collections
@@ -21,10 +22,12 @@ class Database:
     settings = None
     password_reset_tokens = None
 
+
 db = Database()
 
+
 async def connect_to_mongo():
-    db.client = AsyncIOMotorClient(settings.MONGO_URI)
+    db.client = AsyncMongoClient(settings.MONGO_URI)
     db.db = db.client[settings.MONGO_DB_NAME]
 
     # Initialize collection references
@@ -44,14 +47,31 @@ async def connect_to_mongo():
     db.password_reset_tokens = db.db.password_reset_tokens
 
     # Create indexes
-    await db.guest_sessions.create_index("expires_at", expireAfterSeconds=0)
-    await db.users.create_index("email", unique=True)
-    await db.users.create_index("student_id", sparse=True)
-    await db.password_reset_tokens.create_index("expires_at", expireAfterSeconds=0)
+    await db.guest_sessions.create_index(
+        "expires_at",
+        expireAfterSeconds=0
+    )
+
+    await db.users.create_index(
+        "email",
+        unique=True
+    )
+
+    await db.users.create_index(
+        "student_id",
+        sparse=True
+    )
+
+    await db.password_reset_tokens.create_index(
+        "expires_at",
+        expireAfterSeconds=0
+    )
+
     print("Connected to MongoDB.")
+
 
 async def close_mongo_connection():
     if db.client:
-        db.client.close()
+        await db.client.close()
+        db.client = None
         print("Closed MongoDB connection.")
-
