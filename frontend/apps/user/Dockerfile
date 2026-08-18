@@ -3,12 +3,12 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy the entire frontend workspace
-COPY package*.json ./
+# Copy workspace definition and user app files
+COPY package.json ./
 COPY packages ./packages
 COPY apps/user ./apps/user
 
-# Install dependencies for the whole workspace
+# Install dependencies for the workspace
 RUN npm install
 
 # Build the user app

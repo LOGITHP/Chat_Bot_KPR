@@ -3,12 +3,12 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy the entire frontend workspace
-COPY package*.json ./
+# Copy workspace definition and admin app files
+COPY package.json ./
 COPY packages ./packages
 COPY apps/admin ./apps/admin
 
-# Install dependencies for the whole workspace
+# Install dependencies for the workspace
 RUN npm install
 
 # Build the admin app

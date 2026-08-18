@@ -23,8 +23,8 @@ RUN pip install --no-cache-dir --default-timeout=100 --retries 5 -r requirements
 # Copy all backend application code
 COPY . .
 
-# Ensure storage and HuggingFace cache directories exist inside container
-RUN mkdir -p storage/data storage/minio_data storage/qdrant_storage /root/.cache/huggingface
+# The Docker Compose named volumes own all persistent service data.
+RUN mkdir -p /root/.cache/huggingface
 
 EXPOSE 8000
 

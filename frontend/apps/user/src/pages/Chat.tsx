@@ -186,7 +186,7 @@ export default function Chat() {
     setInput("")
     setIsLoading(true)
 
-    const isGuest = !localStorage.getItem("access_token")
+    const isGuest = !localStorage.getItem(TOKEN_KEY)
 
     try {
       const res = await fetch("/api/v1/chat/", {

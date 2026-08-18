@@ -59,7 +59,10 @@ export default function UserLayout() {
     <div className="flex h-screen bg-background">
       {/* Mobile Menu Toggle */}
       <div className="md:hidden fixed top-0 left-0 w-full flex items-center justify-between px-4 h-14 border-b border-border bg-background z-50">
-        <div className="font-semibold text-lg">CampusAI</div>
+        <div className="flex items-center gap-2 font-semibold text-lg">
+          <img src="/kpr_logo.png" alt="KPRIET" className="h-8 w-8 rounded-md object-contain" />
+          <span>CampusAI</span>
+        </div>
         <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
           {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
@@ -71,9 +74,7 @@ export default function UserLayout() {
         isMobileMenuOpen ? "translate-x-0 pt-14 md:pt-0" : "-translate-x-full md:translate-x-0"
       )}>
         <div className="p-5 hidden md:flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-md">
-            <span className="text-white text-xs font-bold">AI</span>
-          </div>
+          <img src="/kpr_logo.png" alt="KPRIET" className="h-9 w-9 rounded-lg bg-white object-contain p-0.5 shadow-md" />
           <div className="font-bold text-lg gradient-text">CampusAI</div>
         </div>
 

@@ -50,7 +50,10 @@ export default function AdminLayout() {
       {/* Sidebar */}
       <aside className="w-64 bg-sidebar border-r border-border flex flex-col hidden md:flex">
         <div className="h-14 flex items-center px-4 border-b border-border bg-sidebar text-sidebar-foreground">
-          <div className="font-bold text-lg tracking-tight">CampusAI Admin</div>
+          <div className="flex items-center gap-2 font-bold text-lg tracking-tight">
+            <img src="/kpr_logo.png" alt="KPRIET" className="h-8 w-8 rounded-md bg-white object-contain p-0.5" />
+            <span>CampusAI Admin</span>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto py-4 px-3 space-y-6">
@@ -99,7 +102,10 @@ export default function AdminLayout() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-14 flex items-center justify-between px-4 md:px-6 border-b border-border bg-white dark:bg-gray-900">
-          <div className="font-semibold text-gray-800 dark:text-gray-200 md:hidden">CampusAI Admin</div>
+          <div className="flex items-center gap-2 font-semibold text-gray-800 dark:text-gray-200 md:hidden">
+            <img src="/kpr_logo.png" alt="KPRIET" className="h-8 w-8 rounded-md bg-white object-contain p-0.5" />
+            <span>CampusAI Admin</span>
+          </div>
           <div className="flex items-center gap-3 ml-auto">
             <div className="text-sm font-medium text-gray-600 dark:text-gray-300 hidden sm:block">{adminName}</div>
             <div className="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white font-bold text-xs shadow">
