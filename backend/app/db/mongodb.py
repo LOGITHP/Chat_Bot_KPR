@@ -21,6 +21,8 @@ class Database:
     audit_logs = None
     settings = None
     password_reset_tokens = None
+    transport = None
+    campus_data = None
 
 
 db = Database()
@@ -45,6 +47,8 @@ async def connect_to_mongo():
     db.audit_logs = db.db.audit_logs
     db.settings = db.db.settings
     db.password_reset_tokens = db.db.password_reset_tokens
+    db.transport = db.db.transport
+    db.campus_data = db.db.campus_data
 
     # Create indexes
     await db.guest_sessions.create_index(

@@ -54,7 +54,7 @@ async def get_conversation_context(conversation_id: str, is_guest: bool = False)
         
     return formatted_messages, summary
 
-async def add_message_to_conversation(conversation_id: str, role: str, content: str, sources: List[dict] = None, is_guest: bool = False):
+async def add_message_to_conversation(conversation_id: str, role: str, content: str, sources: List[dict] = None, is_guest: bool = False, user_id: str = None):
     """Adds a message to history and conditionally summarizes if it gets too long."""
     if is_guest:
         msg = {
@@ -79,15 +79,29 @@ async def add_message_to_conversation(conversation_id: str, role: str, content: 
     }
     await db.messages.insert_one(msg_doc)
     
-    # Update conversation count and last message
-    conv = await db.conversations.find_one_and_update(
-        {"conversation_id": conversation_id},
-        {
-            "$inc": {"message_count": 1},
-            "$set": {"last_message_at": datetime.utcnow(), "updated_at": datetime.utcnow()}
-        },
-        return_document=True
-    )
+    # Upsert conversation document
+    conv = await db.conversations.find_one({"conversation_id": conversation_id})
+    if not conv:
+        title = content[:60] if role == "user" else "Campus Inquiry"
+        await db.conversations.insert_one({
+            "conversation_id": conversation_id,
+            "user_id": user_id,
+            "title": title,
+            "message_count": 1,
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        })
+    else:
+        update_fields = {"updated_at": datetime.utcnow()}
+        if user_id and not conv.get("user_id"):
+            update_fields["user_id"] = user_id
+        await db.conversations.update_one(
+            {"conversation_id": conversation_id},
+            {
+                "$inc": {"message_count": 1},
+                "$set": update_fields
+            }
+        )
     
     # Check if summarization is needed (e.g., every 10 messages)
     if conv and conv.get("message_count", 0) > 0 and conv.get("message_count", 0) % 10 == 0:

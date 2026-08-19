@@ -90,8 +90,9 @@ async def generate_rag_response(
     answer = await ollama_client.generate_chat_completion(messages)
 
     # 5. Store conversation
-    await add_message_to_conversation(conversation_id, "user", question, is_guest=is_guest)
-    await add_message_to_conversation(conversation_id, "assistant", answer, sources=sources, is_guest=is_guest)
+    user_id = str(user_profile.get("id") or user_profile.get("_id") or "")
+    await add_message_to_conversation(conversation_id, "user", question, is_guest=is_guest, user_id=user_id)
+    await add_message_to_conversation(conversation_id, "assistant", answer, sources=sources, is_guest=is_guest, user_id=user_id)
 
     return {
         "answer": answer,

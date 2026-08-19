@@ -28,20 +28,24 @@ def chunk_document(doc_chunks: List[DocumentChunk], chunk_size: int = settings.C
     """Takes initial document chunks (like a page or paragraph) and ensures they fit the chunk_size constraints."""
     final_chunks = []
     for chunk in doc_chunks:
-        if len(chunk.text.split()) > chunk_size:
+        text_clean = chunk.text.strip() if chunk.text else ""
+        if not text_clean:
+            continue
+            
+        words = text_clean.split()
+        if len(words) > chunk_size:
             # Sub-chunk this large chunk
-            sub_texts = split_text_into_chunks(chunk.text, chunk_size, chunk_overlap)
+            sub_texts = split_text_into_chunks(text_clean, chunk_size, chunk_overlap)
             for sub_text in sub_texts:
-                if len(sub_text.split()) >= settings.MIN_CHUNK_SIZE:
+                if sub_text.strip():
                     final_chunks.append(DocumentChunk(
-                        text=sub_text,
+                        text=sub_text.strip(),
                         page=chunk.page,
                         section=chunk.section,
                         sheet=chunk.sheet,
                         row=chunk.row
                     ))
         else:
-            if len(chunk.text.split()) >= settings.MIN_CHUNK_SIZE:
-                final_chunks.append(chunk)
+            final_chunks.append(chunk)
                 
     return final_chunks

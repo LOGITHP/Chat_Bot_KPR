@@ -17,10 +17,11 @@ export default function UserLayout() {
 
   const userName = localStorage.getItem("campus_ai_name") || "Guest"
   const userRole = localStorage.getItem("campus_ai_role") || "guest"
+  const isGuest = userRole === "guest" || !localStorage.getItem("campus_ai_token")
 
   const navItems = [
     { name: "Chat", path: "/chat", icon: MessageSquarePlus },
-    { name: "History", path: "/history", icon: History },
+    ...(!isGuest ? [{ name: "History", path: "/history", icon: History }] : []),
     { name: "Search", path: "/search", icon: Search },
   ]
 

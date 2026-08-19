@@ -52,3 +52,30 @@ async def create_guest_session():
     }
     await db.guest_sessions.insert_one(session)
     return {"guest_session_id": session_id, "expires_at": session["expires_at"]}
+
+@router.get("/conversations")
+async def get_user_conversations(current_user: Optional[dict] = Depends(get_optional_user)):
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Authentication required to view conversation history.")
+    user_id = str(current_user["id"])
+    cursor = db.conversations.find({"user_id": user_id}).sort("updated_at", -1).limit(100)
+    convs = [{"id": str(doc["_id"]), **{k: v for k, v in doc.items() if k != "_id"}} async for doc in cursor]
+    return convs
+
+@router.get("/conversations/{conversation_id}/messages")
+async def get_conversation_messages(conversation_id: str, current_user: Optional[dict] = Depends(get_optional_user)):
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Authentication required.")
+    cursor = db.messages.find({"conversation_id": conversation_id}).sort("created_at", 1)
+    msgs = [{"id": str(doc["_id"]), **{k: v for k, v in doc.items() if k != "_id"}} async for doc in cursor]
+    return msgs
+
+@router.delete("/conversations/{conversation_id}")
+async def delete_conversation(conversation_id: str, current_user: Optional[dict] = Depends(get_optional_user)):
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Authentication required.")
+    user_id = str(current_user["id"])
+    await db.conversations.delete_one({"conversation_id": conversation_id, "user_id": user_id})
+    await db.messages.delete_many({"conversation_id": conversation_id})
+    return {"message": "Conversation deleted successfully."}
+
