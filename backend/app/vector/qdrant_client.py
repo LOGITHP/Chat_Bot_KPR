@@ -55,19 +55,32 @@ class VectorStoreClient:
     def search(self, query: str, filters: Optional[Filter] = None, top_k: int = 5) -> List[Dict[str, Any]]:
         query_vector = embedding_service.embed_text(query)
         
-        results = self.client.search(
-            collection_name=self.collection_name,
-            query_vector=query_vector,
-            query_filter=filters,
-            limit=top_k
-        )
-        
-        retrieved = []
-        for res in results:
-            retrieved.append({
-                "score": res.score,
-                "payload": res.payload
-            })
-        return retrieved
+        try:
+            if hasattr(self.client, "query_points"):
+                response = self.client.query_points(
+                    collection_name=self.collection_name,
+                    query=query_vector,
+                    query_filter=filters,
+                    limit=top_k
+                )
+                results = response.points
+            else:
+                results = self.client.search(
+                    collection_name=self.collection_name,
+                    query_vector=query_vector,
+                    query_filter=filters,
+                    limit=top_k
+                )
+            
+            retrieved = []
+            for res in results:
+                retrieved.append({
+                    "score": res.score,
+                    "payload": res.payload
+                })
+            return retrieved
+        except Exception as e:
+            print(f"[QdrantClient Error] Vector search failed ({e}). Returning empty list.")
+            return []
 
 qdrant_client = VectorStoreClient()

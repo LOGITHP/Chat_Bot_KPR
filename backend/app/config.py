@@ -60,15 +60,19 @@ class Settings(BaseSettings):
 
     @property
     def effective_llm_base_url(self) -> str:
-        """Returns the LLM base URL, preferring OPENAI_BASE_URL from .env."""
-        if self.OPENAI_BASE_URL and "11434" in self.OPENAI_BASE_URL:
-            return self.OPENAI_BASE_URL
-        return f"{self.OLLAMA_URL}/v1"
+        """Returns the LLM base URL, prioritizing Docker container URL over localhost."""
+        if self.OLLAMA_URL and ("ollama" in self.OLLAMA_URL or "localhost" not in self.OLLAMA_URL):
+            return f"{self.OLLAMA_URL.rstrip('/')}/v1"
+        if self.OPENAI_BASE_URL and ("ollama" in self.OPENAI_BASE_URL or "localhost" not in self.OPENAI_BASE_URL):
+            return self.OPENAI_BASE_URL.rstrip('/')
+        if self.OLLAMA_URL:
+            return f"{self.OLLAMA_URL.rstrip('/')}/v1"
+        return self.OPENAI_BASE_URL
 
     @property
     def effective_model_name(self) -> str:
-        """Returns the LLM model name, preferring LLM_MODEL_NAME from .env."""
-        return self.LLM_MODEL_NAME or self.OLLAMA_MODEL or "qwen3.5:4b"
+        """Returns the LLM model name, preferring OLLAMA_MODEL or LLM_MODEL_NAME."""
+        return self.OLLAMA_MODEL or self.LLM_MODEL_NAME or "qwen2.5:3b"
 
     @property
     def effective_api_key(self) -> str:

@@ -99,7 +99,7 @@ services:
         sleep 2;
       done;
       echo 'Ollama is ready.';
-      MODEL=\"${OLLAMA_MODEL:-qwen3.5:4b}\";
+      MODEL="${OLLAMA_MODEL:-qwen2.5:3b}";
       echo \"Checking if model $$MODEL exists in local Ollama storage...\";
       if curl -s http://ollama:11434/api/tags | grep -q \"\\\"name\\\":\\\"$$MODEL\"; then
         echo \"Model $$MODEL is already present in persistent volume. Skipping download.\";

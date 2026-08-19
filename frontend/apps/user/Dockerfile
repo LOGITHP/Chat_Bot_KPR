@@ -3,15 +3,18 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy workspace definition and user app files
-COPY package.json ./
+# 1. Copy ONLY package manifests first to leverage Docker layer caching
+COPY package.json package-lock.json* ./
+COPY apps/user/package.json ./apps/user/package.json
 COPY packages ./packages
-COPY apps/user ./apps/user
 
-# Install dependencies for the workspace
+# 2. Install dependencies (this layer is CACHED unless package.json changes)
 RUN npm install
 
-# Build the user app
+# 3. Copy application source code after dependency installation
+COPY apps/user ./apps/user
+
+# 4. Build the user app
 RUN npm run build --workspace=apps/user
 
 # Stage 2: Serve with lightweight Nginx
