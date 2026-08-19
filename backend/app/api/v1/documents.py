@@ -1,4 +1,6 @@
 import uuid
+import os
+import tempfile
 from fastapi import APIRouter, Depends, UploadFile, File, BackgroundTasks
 from app.db.mongodb import db
 from app.core.permissions import get_current_active_faculty
@@ -15,7 +17,8 @@ async def upload_document(
     # This is a simplified version. Needs actual MinIO upload.
     # We will simulate MinIO upload by writing to local disk temporarily
     file_id = str(uuid.uuid4())
-    temp_path = f"/tmp/{file_id}_{file.filename}"
+    temp_dir = tempfile.gettempdir()
+    temp_path = os.path.join(temp_dir, f"{file_id}_{file.filename}")
     
     with open(temp_path, "wb") as f:
         f.write(await file.read())

@@ -143,33 +143,43 @@ async def generate_reset_link_for_user(user_id: str):
 
 @router.get("/stats", dependencies=[Depends(get_current_active_admin)])
 async def get_dashboard_stats():
-    total_users = await db.users.count_documents({})
-    total_students = await db.users.count_documents({"role": "student"})
-    total_faculty = await db.users.count_documents({"role": "faculty"})
-    total_docs = await db.documents.count_documents({})
-    total_departments = await db.departments.count_documents({"active": True})
-    total_clubs = await db.clubs.count_documents({"active": True})
-    total_transport = await db.transport.count_documents({"active": True})
-    
-    recent_jobs_cursor = db.processing_jobs.find().sort("started_at", -1).limit(6)
-    recent_jobs = [{"id": str(doc["_id"]), **{k: v for k, v in doc.items() if k != "_id"}} async for doc in recent_jobs_cursor]
-    
-    return {
-        "users": {
-            "total": total_users,
-            "students": total_students,
-            "faculty": total_faculty
-        },
-        "documents": {
-            "total": total_docs
-        },
-        "content": {
-            "departments": total_departments,
-            "clubs": total_clubs,
-            "transport": total_transport
-        },
-        "recent_jobs": recent_jobs
-    }
+    try:
+        total_users = await db.users.count_documents({})
+        total_students = await db.users.count_documents({"role": "student"})
+        total_faculty = await db.users.count_documents({"role": "faculty"})
+        total_docs = await db.documents.count_documents({})
+        total_departments = await db.departments.count_documents({"active": True})
+        total_clubs = await db.clubs.count_documents({"active": True})
+        total_transport = await db.transport.count_documents({"active": True})
+        
+        recent_jobs_cursor = db.processing_jobs.find().sort("started_at", -1).limit(6)
+        recent_jobs = [{"id": str(doc["_id"]), **{k: v for k, v in doc.items() if k != "_id"}} async for doc in recent_jobs_cursor]
+        
+        return {
+            "users": {
+                "total": total_users,
+                "students": total_students,
+                "faculty": total_faculty
+            },
+            "documents": {
+                "total": total_docs
+            },
+            "content": {
+                "departments": total_departments,
+                "clubs": total_clubs,
+                "transport": total_transport
+            },
+            "recent_jobs": recent_jobs
+        }
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {
+            "users": {"total": 0, "students": 0, "faculty": 0},
+            "documents": {"total": 0},
+            "content": {"departments": 0, "clubs": 0, "transport": 0},
+            "recent_jobs": []
+        }
 
 # ─── Documents Management ────────────────────────────
 

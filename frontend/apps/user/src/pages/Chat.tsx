@@ -189,34 +189,38 @@ export default function Chat() {
     if (sessionParam) {
       setConversationId(sessionParam)
       localStorage.setItem(ACTIVE_CONV_KEY, sessionParam)
-      // Fetch messages for this session
-      if (token) {
-        setIsLoading(true)
-        fetch(`/api/v1/chat/conversations/${sessionParam}/messages`, {
-          headers: getAuthHeaders()
+    }
+
+    const currentId = sessionParam || conversationId
+
+    // Fetch messages for this session
+    if (token) {
+      setIsLoading(true)
+      fetch(`/api/v1/chat/conversations/${currentId}/messages`, {
+        headers: getAuthHeaders()
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            const formatted: Message[] = data.map(m => ({
+              id: m.id || generateId(),
+              role: m.role,
+              content: m.content,
+              sources: m.sources || []
+            }))
+            setMessages(formatted)
+          }
         })
-          .then(res => res.json())
-          .then(data => {
-            if (Array.isArray(data) && data.length > 0) {
-              const formatted: Message[] = data.map(m => ({
-                id: m.id || generateId(),
-                role: m.role,
-                content: m.content,
-                sources: m.sources || []
-              }))
-              setMessages(formatted)
-            }
-          })
-          .catch(e => console.error("Error loading chat session", e))
-          .finally(() => setIsLoading(false))
-      }
+        .catch(e => console.error("Error loading chat session", e))
+        .finally(() => setIsLoading(false))
     } else {
       // If guest, ensure guest session exists
-      if (!token) {
-        ensureGuestSession(conversationId).then(id => {
+      ensureGuestSession(currentId).then(id => {
+        if (id !== currentId) {
           setConversationId(id)
-        })
-      }
+          localStorage.setItem(ACTIVE_CONV_KEY, id)
+        }
+      })
     }
 
     // Auto-send query if ?q= is passed (from search bar)
