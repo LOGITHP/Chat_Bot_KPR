@@ -80,15 +80,22 @@ export default function Documents() {
         body: formData
       })
 
-      const data = await res.json()
       if (res.ok) {
         setUploadMsg({ type: "success", text: `"${file.name}" uploaded successfully! Chunking and indexing started.` })
         loadData()
       } else {
-        setUploadMsg({ type: "error", text: data.detail || "Failed to upload document." })
+        let errorMsg = "Failed to upload document."
+        try {
+          const data = await res.json()
+          if (data && data.detail) errorMsg = data.detail
+        } catch (e) {
+          if (res.status === 413) errorMsg = "File is too large to upload."
+          else errorMsg = `Server error: ${res.status} ${res.statusText}`
+        }
+        setUploadMsg({ type: "error", text: errorMsg })
       }
     } catch {
-      setUploadMsg({ type: "error", text: "Network error during upload." })
+      setUploadMsg({ type: "error", text: "Network error during upload. Ensure the server is reachable." })
     } finally {
       setUploading(false)
       e.target.value = ""
