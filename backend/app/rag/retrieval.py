@@ -63,6 +63,10 @@ def build_auth_filter(user_profile: dict, is_guest: bool = False, requested_scop
 
     return Filter(must=must_conditions)
 
-def retrieve_context(query: str, user_profile: dict, is_guest: bool = False, requested_scope: dict = None, top_k: int = 5) -> List[Dict[str, Any]]:
+from app.config import settings
+
+def retrieve_context(query: str, user_profile: dict, is_guest: bool = False, requested_scope: dict = None, top_k: int = None) -> List[Dict[str, Any]]:
+    if top_k is None:
+        top_k = settings.TOP_K
     auth_filter = build_auth_filter(user_profile, is_guest, requested_scope)
     return qdrant_client.search(query, filters=auth_filter, top_k=top_k)

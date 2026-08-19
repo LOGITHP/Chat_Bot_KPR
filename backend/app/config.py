@@ -33,10 +33,14 @@ class Settings(BaseSettings):
     LOCAL_FILES_ONLY: bool = False
 
     # Chunking
-    CHUNK_SIZE: int = 512
-    CHUNK_OVERLAP: int = 50
-    MIN_CHUNK_SIZE: int = 100
+    CHUNK_SIZE: int = 700
+    CHUNK_OVERLAP: int = 100
+    MIN_CHUNK_SIZE: int = 150
     MAX_CHUNK_SIZE: int = 2000
+
+    # Retrieval
+    TOP_K: int = 5
+    SIMILARITY_THRESHOLD: float = 0.65
 
     # Security — support both JWT_SECRET_KEY and SECRET_KEY
     JWT_SECRET_KEY: str = "secret"

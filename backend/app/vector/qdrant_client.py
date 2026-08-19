@@ -74,10 +74,11 @@ class VectorStoreClient:
             
             retrieved = []
             for res in results:
-                retrieved.append({
-                    "score": res.score,
-                    "payload": res.payload
-                })
+                if res.score >= settings.SIMILARITY_THRESHOLD:
+                    retrieved.append({
+                        "score": res.score,
+                        "payload": res.payload
+                    })
             return retrieved
         except Exception as e:
             print(f"[QdrantClient Error] Vector search failed ({e}). Returning empty list.")
