@@ -1,4 +1,4 @@
-﻿import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
 import AdminLayout  from "./layouts/AdminLayout"
 import Dashboard    from "./pages/Dashboard"
 import Documents    from "./pages/Documents"
@@ -9,7 +9,18 @@ import CampusData   from "./pages/CampusData"
 import Users        from "./pages/Users"
 import Categories   from "./pages/Categories"
 import Settings     from "./pages/Settings"
-import AdminLogin, { getAdminToken } from "./pages/Login"
+import AdminLogin, { getAdminToken, clearAdminSession } from "./pages/Login"
+
+// Global fetch interceptor for 401s
+const originalFetch = window.fetch
+window.fetch = async (...args) => {
+  const response = await originalFetch(...args)
+  if (response.status === 401 && window.location.pathname !== "/login") {
+    clearAdminSession()
+    window.location.href = "/login"
+  }
+  return response
+}
 
 function AdminGuard({ children }: { children: React.ReactNode }) {
   return getAdminToken() ? <>{children}</> : <Navigate to="/login" replace />

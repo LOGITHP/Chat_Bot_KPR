@@ -11,7 +11,18 @@ import Documents   from "./pages/Documents"
 import Profile     from "./pages/Profile"
 import Settings    from "./pages/Settings"
 import Dashboard   from "./pages/Dashboard"
-import Login, { getToken } from "./pages/Login"
+import Login, { getToken, clearSession } from "./pages/Login"
+
+// Global fetch interceptor for 401s
+const originalFetch = window.fetch
+window.fetch = async (...args) => {
+  const response = await originalFetch(...args)
+  if (response.status === 401 && window.location.pathname !== "/login") {
+    clearSession()
+    window.location.href = "/login"
+  }
+  return response
+}
 
 /**
  * ProtectedRoute — redirects to /login if no valid session token.
