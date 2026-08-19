@@ -42,16 +42,20 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str = "secret"
     SECRET_KEY: str = ""       # from .env: SECRET_KEY
     JWT_ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
-    GUEST_SESSION_TTL_HOURS: int = 2
+    GUEST_SESSION_TTL_HOURS: int = 24
 
     # App Config — include Vite dev server origins
-    CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173"
+    CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174"
     MAX_UPLOAD_SIZE_MB: int = 50
     ENVIRONMENT: str = "development"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+
+    @property
+    def effective_jwt_secret_key(self) -> str:
+        return self.JWT_SECRET_KEY or self.SECRET_KEY or "campus-ai-super-secret-key-2026"
 
     @property
     def effective_collection(self) -> str:

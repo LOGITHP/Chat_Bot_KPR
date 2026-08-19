@@ -85,34 +85,35 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-3">
+        <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-3.5">
           {[
-            { label: "Full Name *",  key: "name",          type: "text",  required: true, col: 2 },
-            { label: "Email *",      key: "email",         type: "email", required: true, col: 2 },
-            { label: "Student ID",   key: "student_id",    type: "text",  required: false, col: 1 },
-            { label: "Section",      key: "section",       type: "text",  required: false, col: 1 },
-            { label: "Dept ID",      key: "department_id", type: "text",  required: false, col: 1 },
-            { label: "Year",         key: "year",          type: "number",required: false, col: 1 },
+            { label: "Full Name *",  key: "name",          type: "text",  required: true, col: 2, placeholder: "e.g. Logith P" },
+            { label: "Email Address *", key: "email",      type: "email", required: true, col: 2, placeholder: "e.g. logith@kpriet.ac.in" },
+            { label: "Student ID",   key: "student_id",    type: "text",  required: false, col: 1, placeholder: "e.g. KPR22CS001" },
+            { label: "Section",      key: "section",       type: "text",  required: false, col: 1, placeholder: "e.g. A" },
+            { label: "Dept Code/ID", key: "department_id", type: "text",  required: false, col: 1, placeholder: "e.g. CSE" },
+            { label: "Year",         key: "year",          type: "number",required: false, col: 1, placeholder: "e.g. 3" },
           ].map(f => (
             <div key={f.key} className={f.col === 2 ? "col-span-2" : ""}>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">{f.label}</label>
+              <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1 block">{f.label}</label>
               <input
                 type={f.type}
                 required={f.required}
+                placeholder={f.placeholder}
                 value={(form as any)[f.key]}
                 onChange={e => setForm(v => ({ ...v, [f.key]: e.target.value }))}
-                className="w-full px-3 py-2 rounded-xl border border-border bg-background text-sm outline-none focus:ring-2 focus:ring-indigo-500/50"
+                className="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50/60 dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 text-xs outline-none focus:ring-2 focus:ring-indigo-500 transition"
               />
             </div>
           ))}
 
           {/* Role */}
           <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">Role *</label>
+            <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1 block">Role *</label>
             <select
               value={form.role}
               onChange={e => setForm(v => ({ ...v, role: e.target.value }))}
-              className="w-full px-3 py-2 rounded-xl border border-border bg-background text-sm outline-none focus:ring-2 focus:ring-indigo-500/50"
+              className="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50/60 dark:bg-slate-800 text-gray-900 dark:text-white text-xs outline-none focus:ring-2 focus:ring-indigo-500 transition"
             >
               <option value="student">Student</option>
               <option value="faculty">Faculty</option>
@@ -122,29 +123,30 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
 
           {/* Password */}
           <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">Password *</label>
+            <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1 block">Password *</label>
             <div className="relative">
               <input
                 type={showPwd ? "text" : "password"}
                 required
+                placeholder="Initial password"
                 value={form.password}
                 onChange={e => setForm(v => ({ ...v, password: e.target.value }))}
-                className="w-full pl-3 pr-8 py-2 rounded-xl border border-border bg-background text-sm outline-none focus:ring-2 focus:ring-indigo-500/50"
+                className="w-full pl-3.5 pr-8 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50/60 dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 text-xs outline-none focus:ring-2 focus:ring-indigo-500 transition"
               />
               <button type="button" onClick={() => setShowPwd(v => !v)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground">
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                 {showPwd ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
               </button>
             </div>
           </div>
 
-          <div className="col-span-2 flex gap-3 pt-2">
+          <div className="col-span-2 flex gap-3 pt-3">
             <button type="button" onClick={onClose}
-              className="flex-1 py-2 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:bg-muted transition-colors">
+              className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition">
               Cancel
             </button>
             <button type="submit" disabled={loading}
-              className="flex-1 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 text-white text-sm font-semibold shadow hover:shadow-indigo-500/30 transition-all disabled:opacity-50">
+              className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 text-white text-xs font-semibold shadow-md shadow-indigo-500/25 hover:opacity-90 transition-all disabled:opacity-50">
               {loading ? "Creating…" : "Create User"}
             </button>
           </div>

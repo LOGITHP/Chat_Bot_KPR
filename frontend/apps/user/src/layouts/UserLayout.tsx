@@ -80,7 +80,7 @@ export default function UserLayout() {
         </div>
 
         <div className="px-4 pb-4">
-          <Link to="/chat" className="flex items-center gap-2 w-full justify-center px-4 py-2.5 bg-gradient-to-r from-indigo-500 to-violet-600 text-white rounded-xl hover:opacity-90 transition-all shadow-md shadow-indigo-500/25 font-medium text-sm">
+          <Link to="/chat?new=true" className="flex items-center gap-2 w-full justify-center px-4 py-2.5 bg-gradient-to-r from-indigo-500 to-violet-600 text-white rounded-xl hover:opacity-90 transition-all shadow-md shadow-indigo-500/25 font-medium text-sm">
             <MessageSquarePlus className="h-4 w-4" />
             New Chat
           </Link>

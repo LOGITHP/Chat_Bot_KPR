@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react"
-import { Send, FileText, Bot, User, RotateCcw, Sparkles, AlertCircle } from "lucide-react"
+import { useSearchParams, useNavigate } from "react-router-dom"
+import { Send, FileText, Bot, User, RotateCcw, Sparkles, AlertCircle, MessageSquarePlus } from "lucide-react"
 
 /* ────────────────────────────────────────────────────────
    Types
@@ -26,8 +27,9 @@ function generateId() {
   return crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2)
 }
 
-const TOKEN_KEY         = "campus_ai_token"
-const GUEST_SESSION_KEY = "campus_guest_session"
+const TOKEN_KEY           = "campus_ai_token"
+const GUEST_SESSION_KEY   = "campus_guest_session"
+const ACTIVE_CONV_KEY     = "campus_active_conv_id"
 
 function getAuthHeaders(): HeadersInit {
   const token = localStorage.getItem(TOKEN_KEY)
@@ -40,7 +42,6 @@ async function ensureGuestSession(fallbackId: string): Promise<string> {
   const token = localStorage.getItem(TOKEN_KEY)
   if (token) return fallbackId // authenticated — don't create guest session
 
-  // Use existing guest session if available
   const existing = localStorage.getItem(GUEST_SESSION_KEY)
   if (existing) return existing
 
@@ -59,10 +60,10 @@ async function ensureGuestSession(fallbackId: string): Promise<string> {
    Suggestion prompts
 ──────────────────────────────────────────────────────── */
 const SUGGESTIONS = [
-  { label: "Library Timings", prompt: "What are the library timings?" },
-  { label: "Department Info", prompt: "Show my department information." },
-  { label: "Available Clubs", prompt: "What clubs are available?" },
-  { label: "Bus Routes", prompt: "What are the campus bus routes?" },
+  { label: "Library Timings", prompt: "What are the library timings and rules?" },
+  { label: "Department Info", prompt: "Show my department information and faculty in-charges." },
+  { label: "Available Clubs", prompt: "What technical and cultural clubs are active?" },
+  { label: "Bus Routes", prompt: "What are the college bus routes and timings?" },
 ]
 
 /* ────────────────────────────────────────────────────────
@@ -117,7 +118,7 @@ function MessageBubble({ msg }: { msg: Message }) {
         {msg.sources && msg.sources.length > 0 && (
           <div className="space-y-1.5">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground pl-1">
-              Sources
+              Knowledge Citations
             </p>
             <div className="flex flex-wrap gap-1.5">
               {msg.sources.map((src, i) => (
@@ -145,11 +146,14 @@ function MessageBubble({ msg }: { msg: Message }) {
    Main Chat component
 ──────────────────────────────────────────────────────── */
 export default function Chat() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const conversationIdRef = useRef<string>(generateId())
-  const guestSessionInitialized = useRef(false)
+  const [conversationId, setConversationId] = useState<string>(() => {
+    return searchParams.get("session") || localStorage.getItem(ACTIVE_CONV_KEY) || generateId()
+  })
+
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -166,17 +170,61 @@ export default function Chat() {
     ta.style.height = `${Math.min(ta.scrollHeight, 160)}px`
   }, [input])
 
-  // Initialize guest session on mount (if no auth token)
+  // Handle URL params: ?session=..., ?new=..., ?q=...
   useEffect(() => {
-    if (guestSessionInitialized.current) return
-    guestSessionInitialized.current = true
-    const isGuest = !localStorage.getItem(TOKEN_KEY)
-    if (isGuest) {
-      ensureGuestSession(conversationIdRef.current).then(id => {
-        conversationIdRef.current = id
-      })
+    const sessionParam = searchParams.get("session")
+    const isNewParam = searchParams.get("new")
+    const queryParam = searchParams.get("q")
+    const token = localStorage.getItem(TOKEN_KEY)
+
+    if (isNewParam === "true") {
+      const newId = generateId()
+      setConversationId(newId)
+      setMessages([])
+      localStorage.setItem(ACTIVE_CONV_KEY, newId)
+      setSearchParams({})
+      return
     }
-  }, [])
+
+    if (sessionParam) {
+      setConversationId(sessionParam)
+      localStorage.setItem(ACTIVE_CONV_KEY, sessionParam)
+      // Fetch messages for this session
+      if (token) {
+        setIsLoading(true)
+        fetch(`/api/v1/chat/conversations/${sessionParam}/messages`, {
+          headers: getAuthHeaders()
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (Array.isArray(data) && data.length > 0) {
+              const formatted: Message[] = data.map(m => ({
+                id: m.id || generateId(),
+                role: m.role,
+                content: m.content,
+                sources: m.sources || []
+              }))
+              setMessages(formatted)
+            }
+          })
+          .catch(e => console.error("Error loading chat session", e))
+          .finally(() => setIsLoading(false))
+      }
+    } else {
+      // If guest, ensure guest session exists
+      if (!token) {
+        ensureGuestSession(conversationId).then(id => {
+          setConversationId(id)
+        })
+      }
+    }
+
+    // Auto-send query if ?q= is passed (from search bar)
+    if (queryParam) {
+      sendMessage(queryParam)
+      setSearchParams({})
+    }
+  }, [searchParams])
 
   const sendMessage = useCallback(async (text: string) => {
     if (!text.trim() || isLoading) return
@@ -187,6 +235,8 @@ export default function Chat() {
     setIsLoading(true)
 
     const isGuest = !localStorage.getItem(TOKEN_KEY)
+    const currentConvId = conversationId || generateId()
+    localStorage.setItem(ACTIVE_CONV_KEY, currentConvId)
 
     try {
       const res = await fetch("/api/v1/chat/", {
@@ -194,7 +244,7 @@ export default function Chat() {
         headers: getAuthHeaders(),
         body: JSON.stringify({
           question: text,
-          conversation_id: conversationIdRef.current,
+          conversation_id: currentConvId,
           is_guest: isGuest,
         }),
       })
@@ -223,7 +273,7 @@ export default function Chat() {
     } finally {
       setIsLoading(false)
     }
-  }, [isLoading])
+  }, [isLoading, conversationId])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -242,9 +292,33 @@ export default function Chat() {
     if (lastUser) sendMessage(lastUser.content)
   }
 
+  function handleStartNewChat() {
+    const newId = generateId()
+    setConversationId(newId)
+    setMessages([])
+    localStorage.setItem(ACTIVE_CONV_KEY, newId)
+    setSearchParams({})
+  }
+
   /* ─── Render ─── */
   return (
-    <div className="flex flex-col h-full bg-background">
+    <div className="flex flex-col h-full bg-background relative">
+      {/* Top Session Info Header */}
+      {messages.length > 0 && (
+        <div className="px-4 py-2 border-b border-border/60 bg-background/50 flex items-center justify-between text-xs text-muted-foreground flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="font-mono">Chat Session: {conversationId.slice(-6)}</span>
+          </div>
+          <button
+            onClick={handleStartNewChat}
+            className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+          >
+            <MessageSquarePlus className="w-3.5 h-3.5" /> Start New Chat
+          </button>
+        </div>
+      )}
+
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto">
         {messages.length === 0 ? (
