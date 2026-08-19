@@ -20,4 +20,4 @@ class PDFParser(BaseParser):
             return chunks
         except Exception as e:
             print(f"Error parsing PDF: {e}")
-            return []
+            raise RuntimeError(f"PDF Parsing error: {e}")

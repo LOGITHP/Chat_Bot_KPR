@@ -34,4 +34,4 @@ class DOCXParser(BaseParser):
             return chunks
         except Exception as e:
             print(f"Error parsing DOCX: {e}")
-            return []
+            raise RuntimeError(f"DOCX Parsing error: {e}")

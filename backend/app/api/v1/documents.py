@@ -16,22 +16,31 @@ async def upload_document(
 ):
     # This is a simplified version. Needs actual MinIO upload.
     # We will simulate MinIO upload by writing to local disk temporarily
+    import shutil
+    
     file_id = str(uuid.uuid4())
     temp_dir = tempfile.gettempdir()
     temp_path = os.path.join(temp_dir, f"{file_id}_{file.filename}")
     
-    with open(temp_path, "wb") as f:
-        f.write(await file.read())
+    with open(temp_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+        
+    file_size = os.path.getsize(temp_path)
+    if file_size == 0:
+        raise ValueError("Uploaded file is empty (0 bytes)")
+        
+    print(f"Uploaded file {file.filename} saved to {temp_path} with size {file_size} bytes")
         
     doc_dict = {
         "title": file.filename,
         "filename": file.filename,
         "object_key": f"documents/{file_id}_{file.filename}",
         "content_type": file.content_type,
-        "file_size": 0,
+        "file_size": file_size,
         "document_type": file.filename.split('.')[-1].lower(),
         "status": "uploaded",
-        "active": True
+        "active": True,
+        "access_level": "public"
     }
     
     result = await db.documents.insert_one(doc_dict)
